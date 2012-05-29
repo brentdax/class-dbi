@@ -126,13 +126,15 @@ sub _qual_bind {
 		my $type       = $self->type;
 		my (@qual, @bind);
 		for my $column (sort keys %$search_for) {    # sort for prepare_cached
-			if (defined(my $value = $search_for->{$column})) {
-				push @qual, "$column $type ?";
+			my $realcol = ($self->class->escape_column_names($column))[0];
+			
+			if (defined(my $value = $search_for->{$realcol})) {
+				push @qual, "$realcol $type ?";
 				push @bind, $value;
 			} else {
 
 				# perhaps _carp if $type ne "="
-				push @qual, "$column IS NULL";
+				push @qual, "$realcol IS NULL";
 			}
 		}
 		[ \@qual, \@bind ];

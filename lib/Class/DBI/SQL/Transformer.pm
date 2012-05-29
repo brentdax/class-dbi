@@ -113,9 +113,9 @@ sub _do_transformation {
 
 	$sql =~ s/__TABLE\(?(.*?)\)?__/$me->_expand_table($1)/eg;
 	$sql =~ s/__JOIN\((.*?)\)__/$me->_expand_join($1)/eg;
-	$sql =~ s/__ESSENTIAL__/join ", ", $caller->_essential/eg;
+	$sql =~ s/__ESSENTIAL__/join ", ", $caller->escape_column_names($caller->_essential)/eg;
 	$sql =~
-		s/__ESSENTIAL\((.*?)\)__/join ", ", map "$1.$_", $caller->_essential/eg;
+		s/__ESSENTIAL\((.*?)\)__/join ", ", map "$1.$_", $caller->escape_column_names($caller->_essential)/eg;
 	if ($sql =~ /__IDENTIFIER__/) {
 		my $key_sql = join " AND ", map "$_=?", $caller->primary_columns;
 		$sql =~ s/__IDENTIFIER__/$key_sql/g;

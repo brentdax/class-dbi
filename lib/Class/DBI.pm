@@ -146,6 +146,11 @@ sub _db_error {
 # SET UP
 #----------------------------------------------------------------------
 
+sub escape_column_names {
+	my $self = shift;
+	return @_;
+}
+
 sub connection {
 	my $class = shift;
 	$class->set_db(Main => @_);
@@ -513,7 +518,7 @@ sub _insert_row {
 	eval {
 		my @columns = keys %$data;
 		my $sth     = $self->sql_MakeNewObj(
-			join(', ', @columns),
+			join(', ', $self->escape_column_names(@columns)),
 			join(', ', map $self->_column_placeholder($_), @columns),
 		);
 		$self->_bind_param($sth, \@columns);
@@ -679,7 +684,7 @@ sub update {
 
 sub _update_line {
 	my $self = shift;
-	join(', ', map "$_ = " . $self->_column_placeholder($_), $self->is_changed);
+	join(', ', map { ($self->escape_column_names($_))[0] . " = " . $self->_column_placeholder($_) } $self->is_changed);
 }
 
 sub _update_vals {
@@ -728,7 +733,7 @@ sub _flesh {
 	if (my @want = grep !$self->_attribute_exists($_),
 		$self->__grouper->columns_in(@real)) {
 		my %row;
-		@row{@want} = $self->sql_Flesh(join ", ", @want)->select_row($self->id);
+		@row{@want} = $self->sql_Flesh(join ", ", $self->escape_column_names(@want))->select_row($self->id);
 		$self->_attribute_store(\%row);
 		$self->call_trigger('select');
 	}
@@ -1037,12 +1042,14 @@ sub count_all { shift->sql_single("COUNT(*)")->select_val }
 
 sub maximum_value_of {
 	my ($class, $col) = @_;
+	$col = $class->escape_column_names($col);
 	$class->sql_single("MAX($col)")->select_val;
 }
 
 sub minimum_value_of {
 	my ($class, $col) = @_;
-	$class->sql_single("MIN($col)")->select_val;
+	$col = $class->escape_column_names($col);
+		$class->sql_single("MIN($col)")->select_val;
 }
 
 sub _unique_entries {
